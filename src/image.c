@@ -4,6 +4,7 @@
 #include "cuda.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -95,6 +96,58 @@ void draw_label(image a, int r, int c, image label, const float *rgb)
                 set_pixel(a, i+c, j+r, k, rgb[k] * val);
             }
         }
+    }
+}
+
+void breakFace(image a, int x1, int y1, int x2, int y2, float r, float g, float b)
+{
+    //normalize_image(a);
+    int i, j, k;
+    if(x1 < 0) x1 = 0;
+    if(x1 >= a.w) x1 = a.w-1;
+    if(x2 < 0) x2 = 0;
+    if(x2 >= a.w) x2 = a.w-1;
+
+    if(y1 < 0) y1 = 0;
+    if(y1 >= a.h) y1 = a.h-1;
+    if(y2 < 0) y2 = 0;
+    if(y2 >= a.h) y2 = a.h-1;
+
+    for(i = x1; i+10 <= x2; i+=10)
+        for(j = y1; j <= y2; ++j)
+            for (k = 0; k < 10; ++k) {
+                a.data[i + j*a.w + 0*a.w*a.h + k] = a.data[i + j*a.w + 0*a.w*a.h];
+                a.data[i + j*a.w + 1*a.w*a.h + k] = a.data[i + j*a.w + 1*a.w*a.h];
+                a.data[i + j*a.w + 2*a.w*a.h + k] = a.data[i + j*a.w + 2*a.w*a.h];
+            }
+
+    for(i = x1; i <= x2; ++i)
+        for(j = y1; j+10<=y2; j+=10)
+            for(k = 0; k < 10; ++k) {
+                a.data[i + (j+k)*a.w + 0*a.w*a.h] = a.data[i + j*a.w + 0*a.w*a.h];
+                a.data[i + (j+k)*a.w + 1*a.w*a.h] = a.data[i + j*a.w + 1*a.w*a.h];
+                a.data[i + (j+k)*a.w + 2*a.w*a.h] = a.data[i + j*a.w + 2*a.w*a.h];
+            }
+
+    for(i = x1; i <= x2; ++i){
+        a.data[i + y1*a.w + 0*a.w*a.h] = r;
+        a.data[i + y2*a.w + 0*a.w*a.h] = r;
+
+        a.data[i + y1*a.w + 1*a.w*a.h] = g;
+        a.data[i + y2*a.w + 1*a.w*a.h] = g;
+
+        a.data[i + y1*a.w + 2*a.w*a.h] = b;
+        a.data[i + y2*a.w + 2*a.w*a.h] = b;
+    }
+    for(i = y1; i <= y2; ++i){
+        a.data[x1 + i*a.w + 0*a.w*a.h] = r;
+        a.data[x2 + i*a.w + 0*a.w*a.h] = r;
+
+        a.data[x1 + i*a.w + 1*a.w*a.h] = g;
+        a.data[x2 + i*a.w + 1*a.w*a.h] = g;
+
+        a.data[x1 + i*a.w + 2*a.w*a.h] = b;
+        a.data[x2 + i*a.w + 2*a.w*a.h] = b;
     }
 }
 
@@ -212,9 +265,20 @@ void draw_detections(image im, int num, float thresh, box *boxes, float **probs,
             if(top < 0) top = 0;
             if(bot > im.h-1) bot = im.h-1;
 
-            draw_box_width(im, left, top, right, bot, width, red, green, blue);
+            if (!strcmp(names[class], "face"))
+                breakFace(im, left, top, right, bot, red, green, blue);
+            else
+                draw_box_width(im, left, top, right, bot, width, red, green, blue);
+
             if (alphabet) {
-                image label = get_label(alphabet, names[class], (im.h*.03)/10);
+                char* nameNpercent = (char*)calloc(1, 20);
+                char percentage[10];
+                strcpy(nameNpercent, names[class]);
+                sprintf(percentage, " %d%%", (int)(prob*100));
+                strcat(nameNpercent, percentage);
+
+                // image label = get_label(alphabet, names[class], (im.h*.03)/10);
+                image label = get_label(alphabet, nameNpercent, (im.h*.03)/10);
                 draw_label(im, top + width, left, label, rgb);
                 free_image(label);
             }

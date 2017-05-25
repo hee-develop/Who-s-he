@@ -1,8 +1,8 @@
-classes= 80
-train  = /home/pjreddie/data/coco/trainvalno5k.txt
+classes= 2
+train  = /home/hee/coco2/trainvalno5k.txt
+#train  = /home/hee/img/trainvalno5k.txt
 #valid  = coco_testdev
-valid = data/coco_val_5k.list
+# valid = /home/hee/lab/5k.txt
+valid = /home/hee/coco2/5k.txt
 names = data/coco.names
-backup = /home/pjreddie/backup/
-eval=coco
-
+backup = /media/hee/8250745A507456BF/weights
